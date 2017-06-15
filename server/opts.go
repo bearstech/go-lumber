@@ -22,7 +22,7 @@ type options struct {
 	ch        chan *lj.Batch
 }
 
-type jsonDecoder func([]byte, interface{}) error
+type jsonDecoder func([]byte) (interface{}, error)
 
 // Keepalive configures the keepalive interval returning an ACK of length 0 to
 // lumberjack client, notifying clients the batch being still active.
@@ -66,7 +66,7 @@ func Channel(c chan *lj.Batch) Option {
 
 // JSONDecoder sets an alternative json decoder for parsing events if protocol
 // version 2 is enabled. The default is json.Unmarshal.
-func JSONDecoder(decoder func([]byte, interface{}) error) Option {
+func JSONDecoder(decoder func([]byte) (interface{}, error)) Option {
 	return func(opt *options) error {
 		opt.decoder = decoder
 		return nil
@@ -91,7 +91,11 @@ func V2(b bool) Option {
 
 func applyOptions(opts []Option) (options, error) {
 	o := options{
-		decoder:   json.Unmarshal,
+		decoder: func(raw []byte) (interface{}, error) {
+			var v interface{}
+			err := json.Unmarshal(raw, &v)
+			return v, err
+		},
 		timeout:   30 * time.Second,
 		keepalive: 3 * time.Second,
 		v1:        true,

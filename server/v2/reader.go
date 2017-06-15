@@ -22,7 +22,7 @@ type reader struct {
 	buf     []byte
 }
 
-type jsonDecoder func([]byte, interface{}) error
+type jsonDecoder func([]byte) (interface{}, error)
 
 func newReader(c net.Conn, to time.Duration, jsonDecoder jsonDecoder) *reader {
 	r := &reader{
@@ -116,9 +116,7 @@ func (r *reader) readJSONEvent(in io.Reader) (interface{}, error) {
 		return nil, err
 	}
 
-	var event interface{}
-	err := r.decoder(buf, &event)
-	return event, err
+	return r.decoder(buf)
 }
 
 func (r *reader) readCompressed(in io.Reader, events []interface{}) ([]interface{}, error) {

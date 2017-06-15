@@ -62,16 +62,22 @@ func TLS(tls *tls.Config) Option {
 
 // JSONDecoder sets an alternative json decoder for parsing events.
 // The default is json.Unmarshal.
-func JSONDecoder(decoder func([]byte, interface{}) error) Option {
+func JSONDecoder(decoder func([]byte) (interface{}, error)) Option {
 	return func(opt *options) error {
 		opt.decoder = decoder
 		return nil
 	}
 }
 
+func defaultDecode(raw []byte) (interface{}, error) {
+	var event interface{}
+	err := json.Unmarshal(raw, &event)
+	return event, err
+}
+
 func applyOptions(opts []Option) (options, error) {
 	o := options{
-		decoder:   json.Unmarshal,
+		decoder:   defaultDecode,
 		timeout:   30 * time.Second,
 		keepalive: 3 * time.Second,
 		tls:       nil,
